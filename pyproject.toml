@@ -30,13 +30,15 @@ dependencies = [
     "tqdm>=4.67.1",
     "typing-extensions>=4.14.0",
     "yfinance>=1.4.1",
+    "streamlit>=1.40.0",
 ]
 
 [project.scripts]
 tradingagents = "cli.main:app"
+tradingagents-web = "web.launch:main"
 
 [tool.setuptools.packages.find]
-include = ["tradingagents*", "cli*"]
+include = ["tradingagents*", "cli*", "web*"]
 
 [tool.setuptools.package-data]
 cli = ["static/*"]

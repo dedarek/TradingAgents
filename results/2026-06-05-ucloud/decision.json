@@ -1,8 +1,0 @@
-{
-  "ticker": "688158.SS",
-  "date": "2026-06-05",
-  "provider": "deepseek",
-  "model": "deepseek-v4-pro",
-  "decision": "Underweight",
-  "run_at": "2026-06-04T19:58:22.179975+00:00"
-}
