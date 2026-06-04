@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from tradingagents.agents.schemas import PortfolioDecision, render_pm_decision
 from tradingagents.agents.utils.agent_utils import (
-    get_instrument_context_from_state,
+    build_instrument_context,
     get_language_instruction,
 )
 from tradingagents.agents.utils.structured import (
@@ -25,7 +25,7 @@ def create_portfolio_manager(llm):
     structured_llm = bind_structured(llm, PortfolioDecision, "Portfolio Manager")
 
     def portfolio_manager_node(state) -> dict:
-        instrument_context = get_instrument_context_from_state(state)
+        instrument_context = build_instrument_context(state["company_of_interest"])
 
         history = state["risk_debate_state"]["history"]
         risk_debate_state = state["risk_debate_state"]
@@ -42,6 +42,16 @@ def create_portfolio_manager(llm):
         prompt = f"""As the Portfolio Manager, synthesize the risk analysts' debate and deliver the final trading decision.
 
 {instrument_context}
+
+---
+
+**A-Stock Trading Constraints** (must factor into your decision):
+- T+1 settlement: shares bought today cannot be sold until the next trading day
+- Daily price limits: main board ±10%, STAR/ChiNext ±20%, ST stocks ±5%
+- Minimum lot size: 100 shares (1 手) for main board; 200 shares for STAR/ChiNext
+- Trading hours: 09:30-11:30, 13:00-15:00 (Beijing time)
+- ST/delisting risk: ST or *ST status signals regulatory warning; factor into position sizing
+- Margin eligibility: not all A-shares are margin-eligible; assume cash-only unless stated
 
 ---
 

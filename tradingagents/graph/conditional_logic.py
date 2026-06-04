@@ -20,18 +20,12 @@ class ConditionalLogic:
         return "Msg Clear Market"
 
     def should_continue_social(self, state: AgentState):
-        """Determine if sentiment-analyst tool round should continue.
-
-        Method name keeps the legacy ``social`` suffix to match the
-        ``AnalystType.SOCIAL = "social"`` wire value (saved-config
-        back-compat); the returned ``clear_node`` label uses the v0.2.5
-        rename so it matches the node registered by the execution plan.
-        """
+        """Determine if social media analysis should continue."""
         messages = state["messages"]
         last_message = messages[-1]
         if last_message.tool_calls:
             return "tools_social"
-        return "Msg Clear Sentiment"
+        return "Msg Clear Social"
 
     def should_continue_news(self, state: AgentState):
         """Determine if news analysis should continue."""
@@ -48,6 +42,30 @@ class ConditionalLogic:
         if last_message.tool_calls:
             return "tools_fundamentals"
         return "Msg Clear Fundamentals"
+
+    def should_continue_policy(self, state: AgentState):
+        """Determine if policy analysis should continue."""
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools_policy"
+        return "Msg Clear Policy"
+
+    def should_continue_hot_money(self, state: AgentState):
+        """Determine if hot money tracking should continue."""
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools_hot_money"
+        return "Msg Clear Hot_money"
+
+    def should_continue_lockup(self, state: AgentState):
+        """Determine if lockup/reduction analysis should continue."""
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools_lockup"
+        return "Msg Clear Lockup"
 
     def should_continue_debate(self, state: AgentState) -> str:
         """Determine if debate should continue."""

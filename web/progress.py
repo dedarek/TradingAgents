@@ -1,4 +1,4 @@
-"""Thread-safe progress tracker — 4 analysts + debate + trader + risk + pm."""
+"""Thread-safe progress tracker shared between the background runner and Streamlit UI."""
 
 from __future__ import annotations
 
@@ -7,11 +7,16 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+
 PIPELINE_STAGES: list[dict[str, str]] = [
     {"id": "market", "name": "技术分析", "icon": "📊", "report_key": "market_report"},
     {"id": "social", "name": "情绪分析", "icon": "💬", "report_key": "sentiment_report"},
     {"id": "news", "name": "新闻舆情", "icon": "📰", "report_key": "news_report"},
     {"id": "fundamentals", "name": "基本面", "icon": "📋", "report_key": "fundamentals_report"},
+    {"id": "policy", "name": "政策分析", "icon": "🏛️", "report_key": "policy_report"},
+    {"id": "hot_money", "name": "游资追踪", "icon": "🔥", "report_key": "hot_money_report"},
+    {"id": "lockup", "name": "解禁监控", "icon": "🔒", "report_key": "lockup_report"},
+    {"id": "quality_gate", "name": "质量门控", "icon": "✅", "report_key": "data_quality_summary"},
     {"id": "debate", "name": "多空辩论", "icon": "⚔️", "report_key": "investment_plan"},
     {"id": "trader", "name": "交易决策", "icon": "💹", "report_key": "trader_investment_plan"},
     {"id": "risk", "name": "风控评估", "icon": "🛡️", "report_key": "risk_debate_state"},
@@ -23,21 +28,28 @@ STAGE_IDS = [s["id"] for s in PIPELINE_STAGES]
 
 @dataclass
 class ProgressTracker:
+    """Mutable state container updated by the runner thread, read by the UI."""
+
     ticker: str = ""
     trade_date: str = ""
     start_time: float = field(default_factory=time.time)
+
     is_running: bool = False
     is_complete: bool = False
     error: Optional[str] = None
+
     current_stage: str = ""
     completed_stages: list[str] = field(default_factory=list)
     stage_reports: dict[str, str] = field(default_factory=dict)
+
     final_state: dict[str, Any] = field(default_factory=dict)
     signal: str = ""
+
     llm_calls: int = 0
     tool_calls: int = 0
     tokens_in: int = 0
     tokens_out: int = 0
+
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     def mark_stage_active(self, stage_id: str) -> None:

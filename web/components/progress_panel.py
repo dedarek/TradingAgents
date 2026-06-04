@@ -21,6 +21,8 @@ def _format_time(seconds: float) -> str:
 
 
 def render_progress(tracker: ProgressTracker) -> None:
+    """Render the pipeline progress panel."""
+
     st.markdown(
         f"""
         <div style="text-align:center; margin:1rem 0 0.5rem;">
@@ -40,8 +42,8 @@ def render_progress(tracker: ProgressTracker) -> None:
     pct = completed / total if total else 0
     st.progress(pct, text=f"{completed}/{total} 阶段完成  ·  {_format_time(tracker.elapsed)}")
 
-    analyst_stages = PIPELINE_STAGES[:4]
-    post_stages = PIPELINE_STAGES[4:]
+    analyst_stages = PIPELINE_STAGES[:7]
+    post_stages = PIPELINE_STAGES[7:]
 
     st.markdown(
         '<div style="margin:0.5rem 0 0.3rem; font-size:0.85rem; color:#888;">ANALYSTS</div>',

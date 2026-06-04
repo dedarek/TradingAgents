@@ -23,7 +23,26 @@ from .alpha_vantage import (
     get_global_news as get_alpha_vantage_global_news,
 )
 from .alpha_vantage_common import AlphaVantageRateLimitError
-from .symbol_utils import NoMarketDataError
+from .a_stock import (
+    resolve_ticker,
+    get_stock_data as get_astock_stock_data,
+    get_indicators as get_astock_indicators,
+    get_fundamentals as get_astock_fundamentals,
+    get_balance_sheet as get_astock_balance_sheet,
+    get_cashflow as get_astock_cashflow,
+    get_income_statement as get_astock_income_statement,
+    get_news as get_astock_news,
+    get_global_news as get_astock_global_news,
+    get_insider_transactions as get_astock_insider_transactions,
+    get_profit_forecast as get_astock_profit_forecast,
+    get_hot_stocks as get_astock_hot_stocks,
+    get_northbound_flow as get_astock_northbound_flow,
+    get_concept_blocks as get_astock_concept_blocks,
+    get_fund_flow as get_astock_fund_flow,
+    get_dragon_tiger_board as get_astock_dragon_tiger_board,
+    get_lockup_expiry as get_astock_lockup_expiry,
+    get_industry_comparison as get_astock_industry_comparison,
+)
 
 # Configuration and routing logic
 from .config import get_config
@@ -58,10 +77,24 @@ TOOLS_CATEGORIES = {
             "get_global_news",
             "get_insider_transactions",
         ]
+    },
+    "signal_data": {
+        "description": "A-stock signal layer (topic attribution, capital flow, consensus forecast)",
+        "tools": [
+            "get_profit_forecast",
+            "get_hot_stocks",
+            "get_northbound_flow",
+            "get_concept_blocks",
+            "get_fund_flow",
+            "get_dragon_tiger_board",
+            "get_lockup_expiry",
+            "get_industry_comparison",
+        ]
     }
 }
 
 VENDOR_LIST = [
+    "a_stock",
     "yfinance",
     "alpha_vantage",
 ]
@@ -70,43 +103,77 @@ VENDOR_LIST = [
 VENDOR_METHODS = {
     # core_stock_apis
     "get_stock_data": {
+        "a_stock": get_astock_stock_data,
         "alpha_vantage": get_alpha_vantage_stock,
         "yfinance": get_YFin_data_online,
     },
     # technical_indicators
     "get_indicators": {
+        "a_stock": get_astock_indicators,
         "alpha_vantage": get_alpha_vantage_indicator,
         "yfinance": get_stock_stats_indicators_window,
     },
     # fundamental_data
     "get_fundamentals": {
+        "a_stock": get_astock_fundamentals,
         "alpha_vantage": get_alpha_vantage_fundamentals,
         "yfinance": get_yfinance_fundamentals,
     },
     "get_balance_sheet": {
+        "a_stock": get_astock_balance_sheet,
         "alpha_vantage": get_alpha_vantage_balance_sheet,
         "yfinance": get_yfinance_balance_sheet,
     },
     "get_cashflow": {
+        "a_stock": get_astock_cashflow,
         "alpha_vantage": get_alpha_vantage_cashflow,
         "yfinance": get_yfinance_cashflow,
     },
     "get_income_statement": {
+        "a_stock": get_astock_income_statement,
         "alpha_vantage": get_alpha_vantage_income_statement,
         "yfinance": get_yfinance_income_statement,
     },
     # news_data
     "get_news": {
+        "a_stock": get_astock_news,
         "alpha_vantage": get_alpha_vantage_news,
         "yfinance": get_news_yfinance,
     },
     "get_global_news": {
+        "a_stock": get_astock_global_news,
         "yfinance": get_global_news_yfinance,
         "alpha_vantage": get_alpha_vantage_global_news,
     },
     "get_insider_transactions": {
+        "a_stock": get_astock_insider_transactions,
         "alpha_vantage": get_alpha_vantage_insider_transactions,
         "yfinance": get_yfinance_insider_transactions,
+    },
+    # signal_data (A-stock only)
+    "get_profit_forecast": {
+        "a_stock": get_astock_profit_forecast,
+    },
+    "get_hot_stocks": {
+        "a_stock": get_astock_hot_stocks,
+    },
+    "get_northbound_flow": {
+        "a_stock": get_astock_northbound_flow,
+    },
+    "get_concept_blocks": {
+        "a_stock": get_astock_concept_blocks,
+    },
+    "get_fund_flow": {
+        "a_stock": get_astock_fund_flow,
+    },
+    "get_dragon_tiger_board": {
+        "a_stock": get_astock_dragon_tiger_board,
+    },
+    "get_lockup_expiry": {
+        "a_stock": get_astock_lockup_expiry,
+    },
+    "get_industry_comparison": {
+        "a_stock": get_astock_industry_comparison,
     },
 }
 
@@ -148,8 +215,6 @@ def route_to_vendor(method: str, *args, **kwargs):
         if vendor not in fallback_vendors:
             fallback_vendors.append(vendor)
 
-    last_no_data: NoMarketDataError | None = None
-    first_error: Exception | None = None
     for vendor in fallback_vendors:
         if vendor not in VENDOR_METHODS[method]:
             continue
@@ -160,37 +225,6 @@ def route_to_vendor(method: str, *args, **kwargs):
         try:
             return impl_func(*args, **kwargs)
         except AlphaVantageRateLimitError:
-            continue  # Rate limits: try the next vendor
-        except NoMarketDataError as e:
-            last_no_data = e  # No data here; another vendor may have it
-            continue
-        except Exception as e:
-            # A fallback vendor failing for an incidental reason (e.g. no API
-            # key configured) must not crash the call when another vendor
-            # already determined the symbol simply has no data. Remember the
-            # first error so a genuine primary-vendor failure still surfaces.
-            if first_error is None:
-                first_error = e
-            continue
-
-    # If any vendor reported "no data", the symbol is genuinely unavailable.
-    # Return one explicit, instructive sentinel rather than a vendor-specific
-    # empty string, so the agent reports "unavailable" instead of inventing a
-    # value. This takes precedence over incidental fallback errors.
-    if last_no_data is not None:
-        sym = last_no_data.symbol
-        canonical = last_no_data.canonical
-        resolved = "" if canonical == sym else f" (resolved to '{canonical}')"
-        return (
-            f"NO_DATA_AVAILABLE: No market data found for '{sym}'{resolved} from "
-            f"any configured vendor. The symbol may be invalid, delisted, or not "
-            f"covered by Yahoo Finance / Alpha Vantage. Do not estimate or "
-            f"fabricate values — report that data is unavailable for this symbol."
-        )
-
-    # No vendor returned data and none reported clean "no data" — surface the
-    # first real error (e.g. the primary vendor's network failure).
-    if first_error is not None:
-        raise first_error
+            continue  # Only rate limits trigger fallback
 
     raise RuntimeError(f"No available vendor for '{method}'")
