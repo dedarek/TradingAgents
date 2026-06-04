@@ -55,9 +55,9 @@ h1 {{ text-align: center; margin-bottom: 2rem; color: #58a6ff; }}
 
             # 简单判断倾向
             decision_lower = decision_text.lower()
-            if any(w in decision_lower for w in ["buy", "bullish", "买入", "看涨"]):
+            if any(w in decision_lower for w in ["buy", "bullish", "买入", "看涨", "overweight"]):
                 badge = '<span class="badge badge-bull">看涨</span>'
-            elif any(w in decision_lower for w in ["sell", "bearish", "卖出", "看跌"]):
+            elif any(w in decision_lower for w in ["sell", "bearish", "卖出", "看跌", "underweight", "reduce"]):
                 badge = '<span class="badge badge-bear">看跌</span>'
             else:
                 badge = '<span class="badge badge-hold">持有</span>'
