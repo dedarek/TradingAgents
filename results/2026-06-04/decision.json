@@ -1,0 +1,8 @@
+{
+  "ticker": "SPY",
+  "date": "2026-06-04",
+  "provider": "deepseek",
+  "model": "deepseek-v4-pro",
+  "decision": "Underweight",
+  "run_at": "2026-06-04T19:40:06.415295+00:00"
+}
