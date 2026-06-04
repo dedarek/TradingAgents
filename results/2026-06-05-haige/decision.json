@@ -1,0 +1,8 @@
+{
+  "ticker": "002465.SZ",
+  "date": "2026-06-05",
+  "provider": "deepseek",
+  "model": "deepseek-v4-pro",
+  "decision": "Underweight",
+  "run_at": "2026-06-04T19:57:30.693537+00:00"
+}
